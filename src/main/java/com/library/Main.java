@@ -1,7 +1,13 @@
 package com.library;
 
+import com.library.exceptions.BookAlreadyBorrowedException;
+import com.library.exceptions.BookNotBorrowedException;
+import com.library.exceptions.BookNotFoundException;
+import com.library.models.Book;
 import com.library.services.LibraryService;
 
+import java.util.InputMismatchException;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -10,21 +16,129 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
 
-        System.out.println("Welcome to the Library System!");
+        System.out.println("========================================");
+        System.out.println("      Welcome to the Library System     ");
+        System.out.println("========================================");
 
         do {
-            System.out.println("\nDo you want to see the available books? (yes/no)");
+            System.out.println("\n--- MAIN MENU ---");
+            System.out.println("1. View Catalog (All Books)");
+            System.out.println("2. View Available Books Only");
+            System.out.println("3. Borrow a Book");
+            System.out.println("4. Return a Book");
+            System.out.println("0. Exit System");
+            System.out.print("\nPlease select an option: ");
 
-            String choice = scanner.nextLine().toLowerCase();
+            int option;
 
-            if (choice.equals("yes")) {
-                System.out.println("Books list here");
-            } else if (choice.equals("no")) {
-                System.out.println("Goodbye!");
-                running = false;
-            } else {
-                System.out.println("Invalid option.");
+            try {
+                String input = scanner.nextLine();
+                option = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                option = -1;
+            }
+
+            switch (option) {
+                case 1:
+                    printBookTable(libraryService.getBooks());
+                    break;
+                case 2:
+                    printBookTable(libraryService.getAvailableBooks());
+                    break;
+                case 3:
+                    try {
+                        System.out.print("\nEnter the Book ID you wish to borrow: ");
+                        int bookId = scanner.nextInt();
+                        scanner.nextLine();
+
+                        System.out.print("Enter your name: ");
+                        String customerName = scanner.nextLine().toUpperCase();
+
+                        libraryService.borrowBook(bookId, customerName);
+
+                        printSuccess(String.format("Success! Enjoy your reading, %s.", customerName));
+                    } catch (InputMismatchException ex) {
+                        printError("Invalid ID format. Please use numbers only.");
+                        scanner.nextLine();
+                    } catch (BookNotFoundException | BookAlreadyBorrowedException ex) {
+                        printError(ex.getMessage());
+                    }
+
+                    break;
+                case 4:
+                    try {
+                        System.out.print("\nEnter the Book ID you are returning: ");
+                        int bookId = scanner.nextInt();
+                        scanner.nextLine();
+
+                        libraryService.returnBook(bookId);
+
+                        printSuccess("Book returned successfully. Thank you!");
+                    } catch (InputMismatchException ex) {
+                        printError("Invalid ID format. Please use numbers only.");
+                        scanner.nextLine();
+                    } catch (BookNotFoundException | BookNotBorrowedException ex) {
+                        printError(ex.getMessage());
+                    }
+
+                    break;
+                case 0:
+                    System.out.println("\nClosing system... Have a great day!");
+                    running = false;
+                    break;
+                default:
+                    printError("Invalid option! Try again.");
             }
         } while (running);
+    }
+
+    private static void printSuccess(String message) {
+        String blue = "\u001B[34m"; // ANSI code for blue text
+        String reset = "\u001B[0m"; // ANSI code to reset color to default
+
+        System.out.println("\n" + blue + message + reset);
+    }
+
+    private static void printError(String message) {
+        String red = "\u001B[31m"; // ANSI code for red text
+        String reset = "\u001B[0m"; // ANSI code to reset color to default
+
+        System.out.println("\n" + red + message + reset);
+    }
+
+    private static void printBookTable(List<Book> books) {
+        // Check if the list is empty to avoid printing an empty table
+        if (books.isEmpty()) {
+            printError("[There are currently no books in this list]");
+            return;
+        }
+
+        // Define column widths: ID (5), Title (30), Author (25), Status (12)
+        String format = "| %-3d | %-30s | %-25s | %-12s |%n";
+        String line = "+-----+--------------------------------+---------------------------+--------------+";
+
+        // Print table header
+        System.out.println("\n" + line);
+        System.out.printf("| %-3s | %-30s | %-25s | %-12s |%n", "ID", "TITLE", "AUTHOR", "STATUS");
+        System.out.println(line);
+
+        // Iterate through books and print each row
+        for (Book book : books) {
+            String status = book.isAvailable() ? "Available" : "Borrowed";
+            System.out.printf(format,
+                    book.getId(),
+                    truncate(book.getTitle(), 30),
+                    truncate(book.getAuthor().getName(), 25),
+                    status
+            );
+        }
+
+        System.out.println(line);
+    }
+
+    private static String truncate(String text, int length) {
+        // If text is too long, cut it and add ellipsis to keep table alignment
+        if (text.length() <= length) return text;
+        return text.substring(0, length - 3) + "...";
     }
 }

@@ -6,7 +6,7 @@ public class Book {
     private int id;
     private String title;
     private Author author;
-    private boolean isAvailable;
+    private boolean available;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -14,8 +14,35 @@ public class Book {
         this.id = id;
         this.title = title;
         this.author = author;
-        this.isAvailable = true;
+        this.available = true;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    private void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+        touch();
+    }
+
+
 }

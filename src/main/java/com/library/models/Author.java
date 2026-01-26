@@ -12,4 +12,8 @@ public class Author {
         this.name = name;
         this.birthDate = birthDate;
     }
+
+    public String getName() {
+        return name;
+    }
 }
