@@ -1,11 +1,16 @@
 package com.library;
 
+import com.library.db.Database;
 import com.library.exceptions.BookAlreadyBorrowedException;
 import com.library.exceptions.BookNotBorrowedException;
 import com.library.exceptions.BookNotFoundException;
+import com.library.exceptions.LoanNotFoundException;
 import com.library.models.Book;
 import com.library.models.Loan;
+import com.library.repositories.BookRepository;
+import com.library.repositories.LoanRepository;
 import com.library.services.LibraryService;
+import org.jdbi.v3.core.Jdbi;
 
 import java.time.format.DateTimeFormatter;
 import java.util.InputMismatchException;
@@ -14,7 +19,11 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        LibraryService libraryService = new LibraryService();
+        Jdbi db = Database.get();
+        BookRepository bookRepository = new BookRepository(db);
+        LoanRepository loanRepository = new LoanRepository(db);
+        LibraryService libraryService = new LibraryService(bookRepository, loanRepository);
+
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
 
@@ -80,7 +89,7 @@ public class Main {
                     } catch (InputMismatchException ex) {
                         printError("Invalid ID format. Please use numbers only.");
                         scanner.nextLine();
-                    } catch (BookNotFoundException | BookNotBorrowedException ex) {
+                    } catch (BookNotFoundException | BookNotBorrowedException | LoanNotFoundException ex) {
                         printError(ex.getMessage());
                     }
 

@@ -3,62 +3,33 @@ package com.library.services;
 import com.library.exceptions.BookAlreadyBorrowedException;
 import com.library.exceptions.BookNotBorrowedException;
 import com.library.exceptions.BookNotFoundException;
-import com.library.models.Author;
+import com.library.exceptions.LoanNotFoundException;
 import com.library.models.Book;
 import com.library.models.Loan;
+import com.library.repositories.BookRepository;
+import com.library.repositories.LoanRepository;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 public class LibraryService {
-    private List<Book> books = new ArrayList<>();
-    private List<Author> authors = new ArrayList<>();
-    private List<Loan> loans = new ArrayList<>();
+    private final BookRepository bookRepository;
+    private final LoanRepository loanRepository;
 
-    public LibraryService() {
-        seed();
-    }
-
-    private void seed() {
-        Author author1 = new Author(1, "J.R.R. Tolkien", LocalDate.of(1892, 1, 3));
-        Author author2 = new Author(2, "George R.R. Martin", LocalDate.of(1948, 9, 20));
-
-        authors.add(author1);
-        authors.add(author2);
-
-        books.add(new Book(1, "The Hobbit", author1));
-        books.add(new Book(2, "The Fellowship of the Ring", author1));
-        books.add(new Book(3, "A Game of Thrones", author2));
-        books.add(new Book(4, "A Dance with Dragons", author2));
+    public LibraryService(BookRepository bookRepository, LoanRepository loanRepository) {
+        this.bookRepository = bookRepository;
+        this.loanRepository = loanRepository;
     }
 
     public List<Book> getBooks() {
-        return books;
+        return bookRepository.findAll();
     }
 
     public List<Book> getAvailableBooks() {
-        List<Book> availableBooks = new ArrayList<>();
-
-        for (Book book : books) {
-            if (book.isAvailable()) {
-                availableBooks.add(book);
-            }
-        }
-
-        return availableBooks;
+        return bookRepository.findManyByAvailability();
     }
 
     public void borrowBook(int bookId, String customerName) {
-        Book book = null;
-
-        for (Book _book : books) {
-            if (_book.getId() == bookId) {
-                book = _book;
-                break;
-            }
-        }
+        Book book = bookRepository.findById(bookId);
 
         if (book == null) {
             throw new BookNotFoundException();
@@ -68,21 +39,15 @@ public class LibraryService {
             throw new BookAlreadyBorrowedException();
         }
 
-        book.setAvailable(false);
+        book.markAsBorrowed();
+        bookRepository.save(book);
 
         Loan loan = new Loan(book, customerName);
-        loans.add(loan);
+        loanRepository.create(loan);
     }
 
     public void returnBook(int bookId) {
-        Book book = null;
-
-        for (Book _book : books) {
-            if (_book.getId() == bookId) {
-                book = _book;
-                break;
-            }
-        }
+        Book book = bookRepository.findById(bookId);
 
         if (book == null) {
             throw new BookNotFoundException();
@@ -92,17 +57,20 @@ public class LibraryService {
             throw new BookNotBorrowedException();
         }
 
-        book.setAvailable(true);
+        Loan loan = loanRepository.findByBookId(book.getId());
 
-        for (Loan loan : loans) {
-            if (loan.getBook().getId() == book.getId()) {
-                loan.setReturnDate(LocalDateTime.now());
-                break;
-            }
+        if (loan == null) {
+            throw new LoanNotFoundException();
         }
+
+        book.markAsReturned();
+        bookRepository.save(book);
+
+        loan.markAsReturned();
+        loanRepository.save(loan);
     }
 
     public List<Loan> getLoans() {
-        return loans;
+        return loanRepository.findAll();
     }
 }

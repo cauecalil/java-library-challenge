@@ -5,15 +5,27 @@ import java.time.LocalDate;
 public class Author {
     private int id;
     private String name;
-    private LocalDate birthDate;
 
-    public Author(int id, String name, LocalDate birthDate) {
-        this.id = id;
+    public Author() {
+    }
+
+    public Author(String name) {
         this.name = name;
-        this.birthDate = birthDate;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getName() {
         return name;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

@@ -9,10 +9,10 @@ public class Loan {
     private LocalDateTime loanDate;
     private LocalDateTime returnDate;
 
-    private static int nextId = 1;
+    public Loan() {
+    }
 
     public Loan(Book book, String customerName) {
-        this.id = nextId++;
         this.book = book;
         this.customerName = customerName;
         this.loanDate = LocalDateTime.now();
@@ -39,7 +39,27 @@ public class Loan {
         return returnDate;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setBook(Book book) {
+        this.book = book;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public void setLoanDate(LocalDateTime loanDate) {
+        this.loanDate = loanDate;
+    }
+
     public void setReturnDate(LocalDateTime returnDate) {
         this.returnDate = returnDate;
+    }
+
+    public void markAsReturned() {
+        this.returnDate = LocalDateTime.now();
     }
 }
