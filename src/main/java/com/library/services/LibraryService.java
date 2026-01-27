@@ -8,6 +8,7 @@ import com.library.models.Book;
 import com.library.models.Loan;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +69,9 @@ public class LibraryService {
         }
 
         book.setAvailable(false);
+
+        Loan loan = new Loan(book, customerName);
+        loans.add(loan);
     }
 
     public void returnBook(int bookId) {
@@ -89,5 +93,16 @@ public class LibraryService {
         }
 
         book.setAvailable(true);
+
+        for (Loan loan : loans) {
+            if (loan.getBook().getId() == book.getId()) {
+                loan.setReturnDate(LocalDateTime.now());
+                break;
+            }
+        }
+    }
+
+    public List<Loan> getLoans() {
+        return loans;
     }
 }

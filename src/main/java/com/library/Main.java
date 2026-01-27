@@ -4,8 +4,10 @@ import com.library.exceptions.BookAlreadyBorrowedException;
 import com.library.exceptions.BookNotBorrowedException;
 import com.library.exceptions.BookNotFoundException;
 import com.library.models.Book;
+import com.library.models.Loan;
 import com.library.services.LibraryService;
 
+import java.time.format.DateTimeFormatter;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
@@ -26,6 +28,7 @@ public class Main {
             System.out.println("2. View Available Books Only");
             System.out.println("3. Borrow a Book");
             System.out.println("4. Return a Book");
+            System.out.println("5. View Loans History");
             System.out.println("0. Exit System");
             System.out.print("\nPlease select an option: ");
 
@@ -82,6 +85,9 @@ public class Main {
                     }
 
                     break;
+                case 5:
+                    printLoanTable(libraryService.getLoans());
+                    break;
                 case 0:
                     System.out.println("\nClosing system... Have a great day!");
                     running = false;
@@ -104,6 +110,12 @@ public class Main {
         String reset = "\u001B[0m"; // ANSI code to reset color to default
 
         System.out.println("\n" + red + message + reset);
+    }
+
+    private static String truncate(String text, int length) {
+        // If text is too long, cut it and add ellipsis to keep table alignment
+        if (text.length() <= length) return text;
+        return text.substring(0, length - 3) + "...";
     }
 
     private static void printBookTable(List<Book> books) {
@@ -136,9 +148,35 @@ public class Main {
         System.out.println(line);
     }
 
-    private static String truncate(String text, int length) {
-        // If text is too long, cut it and add ellipsis to keep table alignment
-        if (text.length() <= length) return text;
-        return text.substring(0, length - 3) + "...";
+    private static void printLoanTable(List<Loan> loans) {
+        // Check if the list is empty to avoid printing an empty table
+        if (loans.isEmpty()) {
+            printError("[No active loans at the moment]");
+            return;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+        // Define column widths: ID (4), Book (30), Customer (15), Loan Date (16), Return Date (16)
+        String format = "| %-4d | %-30s | %-15s | %-16s | %-16s |%n";
+        String line = "+------+--------------------------------+-----------------+------------------+------------------+";
+
+        // Print table header
+        System.out.println("\n" + line);
+        System.out.printf("| %-4s | %-30s | %-15s | %-16s | %-16s |%n", "ID", "BOOK TITLE", "CUSTOMER", "LOAN DATE", "RETURN DATE");
+        System.out.println(line);
+
+        // Iterate through loans and print each row
+        for (Loan loan : loans) {
+            System.out.printf(format,
+                    loan.getId(),
+                    truncate(loan.getBook().getTitle(), 30),
+                    truncate(loan.getCustomerName(), 15),
+                    loan.getLoanDate().format(formatter),
+                    (loan.getReturnDate() != null) ? loan.getReturnDate().format(formatter) : ""
+            );
+        }
+
+        System.out.println(line);
     }
 }
