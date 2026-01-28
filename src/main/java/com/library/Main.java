@@ -12,7 +12,6 @@ import com.library.services.LibraryService;
 import org.jdbi.v3.core.Jdbi;
 
 import java.time.format.DateTimeFormatter;
-import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -276,18 +275,16 @@ public class Main {
     private static void handleBorrowBook() {
         try {
             System.out.print("\nEnter the Book ID you wish to borrow: ");
-            int bookId = scanner.nextInt();
-            scanner.nextLine();
+            int id = Integer.parseInt(scanner.nextLine());
 
             System.out.print("Enter your name: ");
             String customerName = scanner.nextLine().toUpperCase();
 
-            libraryService.borrowBook(bookId, customerName);
+            libraryService.borrowBook(id, customerName);
 
             printSuccess(String.format("Success! Enjoy your reading, %s.", customerName));
-        } catch (InputMismatchException ex) {
+        } catch (NumberFormatException ex) {
             printError("Invalid ID format. Please use numbers only.");
-            scanner.nextLine();
         } catch (BookNotFoundException | BookAlreadyBorrowedException ex) {
             printError(ex.getMessage());
         }
@@ -296,15 +293,13 @@ public class Main {
     private static void handleReturnBook() {
         try {
             System.out.print("\nEnter the Book ID you are returning: ");
-            int bookId = scanner.nextInt();
-            scanner.nextLine();
+            int id = Integer.parseInt(scanner.nextLine());
 
-            libraryService.returnBook(bookId);
+            libraryService.returnBook(id);
 
             printSuccess("Book returned successfully. Thank you!");
-        } catch (InputMismatchException ex) {
+        } catch (NumberFormatException ex) {
             printError("Invalid ID format. Please use numbers only.");
-            scanner.nextLine();
         } catch (BookNotFoundException | BookNotBorrowedException | LoanNotFoundException ex) {
             printError(ex.getMessage());
         }
