@@ -3,7 +3,10 @@ package com.library.repositories;
 import com.library.models.Book;
 import com.library.models.Loan;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.StatementContext;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,20 +35,7 @@ public class LoanRepository {
         return db.withHandle(handle ->
                 handle.createQuery(query)
                         .bind("id", id)
-                        .map((rs, ctx) -> {
-                            Book book = new Book();
-                            book.setId(rs.getInt("book_id"));
-                            book.setTitle(rs.getString("book_title"));
-
-                            Loan loan = new Loan();
-                            loan.setId(rs.getInt("loan_id"));
-                            loan.setCustomerName(rs.getString("customer_name"));
-                            loan.setLoanDate(LocalDateTime.parse(rs.getString("loan_date")));
-                            loan.setReturnDate(rs.getObject("return_date", LocalDateTime.class));
-                            loan.setBook(book);
-
-                            return loan;
-                        })
+                        .map(this::mapRow)
                         .findOne()
                         .orElse(null)
         );
@@ -66,20 +56,7 @@ public class LoanRepository {
 
         return db.withHandle(handle ->
                 handle.createQuery(query)
-                        .map((rs, ctx) -> {
-                            Book book = new Book();
-                            book.setId(rs.getInt("book_id"));
-                            book.setTitle(rs.getString("book_title"));
-
-                            Loan loan = new Loan();
-                            loan.setId(rs.getInt("loan_id"));
-                            loan.setCustomerName(rs.getString("customer_name"));
-                            loan.setLoanDate(LocalDateTime.parse(rs.getString("loan_date")));
-                            loan.setReturnDate(rs.getObject("return_date", LocalDateTime.class));
-                            loan.setBook(book);
-
-                            return loan;
-                        })
+                        .map(this::mapRow)
                         .list()
         );
     }
@@ -91,15 +68,15 @@ public class LoanRepository {
         """;
 
         db.useHandle(handle -> {
-            long id = handle.createUpdate(query)
+            int id = handle.createUpdate(query)
                     .bind("bookId", loan.getBook().getId())
                     .bind("customerName", loan.getCustomerName())
                     .bind("loanDate", loan.getLoanDate().toString())
                     .executeAndReturnGeneratedKeys("id")
-                    .mapTo(Long.class)
+                    .mapTo(Integer.class)
                     .one();
 
-            loan.setId((int) id);
+            loan.setId(id);
         });
     }
 
@@ -132,5 +109,20 @@ public class LoanRepository {
                         .bind("id", id)
                         .execute()
         );
+    }
+
+    private Loan mapRow(ResultSet rs, StatementContext ctx) throws SQLException {
+        Book book = new Book();
+        book.setId(rs.getInt("book_id"));
+        book.setTitle(rs.getString("book_title"));
+
+        Loan loan = new Loan();
+        loan.setId(rs.getInt("loan_id"));
+        loan.setCustomerName(rs.getString("customer_name"));
+        loan.setLoanDate(LocalDateTime.parse(rs.getString("loan_date")));
+        loan.setReturnDate(rs.getObject("return_date", LocalDateTime.class));
+        loan.setBook(book);
+
+        return loan;
     }
 }

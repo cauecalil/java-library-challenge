@@ -3,7 +3,10 @@ package com.library.repositories;
 import com.library.models.Author;
 import com.library.models.Book;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.statement.StatementContext;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,25 +35,7 @@ public class BookRepository {
         return db.withHandle(handle ->
                 handle.createQuery(query)
                         .bind("id", id)
-                        .map((rs, ctx) -> {
-                            Author author = new Author();
-                            author.setId(rs.getInt("author_id"));
-                            author.setName(rs.getString("author_name"));
-
-                            Book book = new Book();
-                            book.setId(rs.getInt("book_id"));
-                            book.setTitle(rs.getString("title"));
-                            book.setAvailable(rs.getBoolean("available"));
-                            book.setCreatedAt(
-                                    LocalDateTime.parse(rs.getString("created_at"))
-                            );
-                            book.setUpdatedAt(
-                                    LocalDateTime.parse(rs.getString("updated_at"))
-                            );
-                            book.setAuthor(author);
-
-                            return book;
-                        })
+                        .map(this::mapRow)
                         .findOne()
                         .orElse(null)
         );
@@ -70,7 +55,11 @@ public class BookRepository {
             JOIN authors a ON a.id = b.author_id
         """;
 
-        return getBooks(query);
+        return db.withHandle(handle ->
+                handle.createQuery(query)
+                        .map(this::mapRow)
+                        .list()
+        );
     }
 
     public List<Book> findManyByAvailability() {
@@ -88,27 +77,9 @@ public class BookRepository {
             WHERE b.available = 1
         """;
 
-        return getBooks(query);
-    }
-
-    private List<Book> getBooks(String query) {
         return db.withHandle(handle ->
                 handle.createQuery(query)
-                        .map((rs, ctx) -> {
-                            Author author = new Author();
-                            author.setId(rs.getInt("author_id"));
-                            author.setName(rs.getString("author_name"));
-
-                            Book book = new Book();
-                            book.setId(rs.getInt("book_id"));
-                            book.setTitle(rs.getString("title"));
-                            book.setAvailable(rs.getBoolean("available"));
-                            book.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
-                            book.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
-                            book.setAuthor(author);
-
-                            return book;
-                        })
+                        .map(this::mapRow)
                         .list()
         );
     }
@@ -120,15 +91,17 @@ public class BookRepository {
         """;
 
         db.useHandle(handle -> {
-            long id = handle.createUpdate(query)
+            int id = handle.createUpdate(query)
                     .bind("title", book.getTitle())
                     .bind("authorId", book.getAuthor().getId())
                     .bind("available", book.isAvailable())
                     .bind("createdAt", book.getCreatedAt().toString())
                     .bind("updatedAt", book.getUpdatedAt().toString())
-                    .execute();
+                    .executeAndReturnGeneratedKeys("id")
+                    .mapTo(Integer.class)
+                    .one();
 
-            book.setId((int) id);
+            book.setId(id);
         });
     }
 
@@ -152,7 +125,7 @@ public class BookRepository {
 
     public void delete(int id) {
         String query = """
-            DELET from books
+            DELETE from books
             WHERE id = :id
         """;
 
@@ -161,5 +134,21 @@ public class BookRepository {
                         .bind("id", id)
                         .execute()
         );
+    }
+
+    private Book mapRow(ResultSet rs, StatementContext ctx) throws SQLException {
+        Author author = new Author();
+        author.setId(rs.getInt("author_id"));
+        author.setName(rs.getString("author_name"));
+
+        Book book = new Book();
+        book.setId(rs.getInt("book_id"));
+        book.setTitle(rs.getString("title"));
+        book.setAvailable(rs.getBoolean("available"));
+        book.setCreatedAt(LocalDateTime.parse(rs.getString("created_at")));
+        book.setUpdatedAt(LocalDateTime.parse(rs.getString("updated_at")));
+        book.setAuthor(author);
+
+        return book;
     }
 }
