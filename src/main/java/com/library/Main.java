@@ -1,12 +1,11 @@
 package com.library;
 
 import com.library.db.Database;
-import com.library.exceptions.BookAlreadyBorrowedException;
-import com.library.exceptions.BookNotBorrowedException;
-import com.library.exceptions.BookNotFoundException;
-import com.library.exceptions.LoanNotFoundException;
+import com.library.exceptions.*;
+import com.library.models.Author;
 import com.library.models.Book;
 import com.library.models.Loan;
+import com.library.repositories.AuthorRepository;
 import com.library.repositories.BookRepository;
 import com.library.repositories.LoanRepository;
 import com.library.services.LibraryService;
@@ -23,9 +22,10 @@ public class Main {
 
     public static void main(String[] args) {
         Jdbi db = Database.get();
+        AuthorRepository authorRepository = new AuthorRepository(db);
         BookRepository bookRepository = new BookRepository(db);
         LoanRepository loanRepository = new LoanRepository(db);
-        libraryService = new LibraryService(bookRepository, loanRepository);
+        libraryService = new LibraryService(authorRepository, bookRepository, loanRepository);
         scanner = new Scanner(System.in);
 
         showMainMenu();
@@ -150,7 +150,7 @@ public class Main {
             System.out.println("║ 2. Add New Author                   ║");
             System.out.println("║ 3. Edit Author                      ║");
             System.out.println("║ 4. Delete Author                    ║");
-            System.out.println("║ 5. Search Author                    ║");
+            System.out.println("║ 5. Search Authors                   ║");
             System.out.println("║ 0. Back to Main Menu                ║");
             System.out.println("╚═════════════════════════════════════╝");
             System.out.print("\nSelect an option: ");
@@ -159,14 +159,21 @@ public class Main {
 
             switch (option) {
                 case 1:
+                    printAuthorTable(libraryService.getAllAuthors());
                     break;
                 case 2:
+                    handleAddNewAuthor();
                     break;
                 case 3:
+                    handleEditAuthor();
                     break;
                 case 4:
+                    handleDeleteAuthor();
                     break;
                 case 5:
+                    System.out.print("\nEnter author name to search: ");
+                    String name = scanner.nextLine();
+                    printAuthorTable(libraryService.searchAuthorsByName(name));
                     break;
                 case 0:
                     inMenu = false;
@@ -216,6 +223,56 @@ public class Main {
         }
     }
 
+    private static void handleAddNewAuthor() {
+        try {
+            System.out.print("\nEnter the author name: ");
+            String name = scanner.nextLine();
+
+            Author author = libraryService.createAuthor(name);
+
+            printSuccess(String.format("Success! Author %s created.", author.getName()));
+        } catch (IllegalArgumentException | AuthorAlreadyExistsException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
+    private static void handleEditAuthor() {
+        try {
+            System.out.print("\nEnter the Author ID to edit: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            Author author = libraryService.getAuthorById(id);
+
+            System.out.printf("Enter the new author name (%s): ", author.getName());
+            String name = scanner.nextLine();
+
+            String newName = name.isBlank() ? author.getName() : name;
+
+            libraryService.updateAuthor(author, newName);
+
+            printSuccess(String.format("Author %s updated successfully.", author.getName()));
+        } catch (NumberFormatException ex) {
+            printError("Invalid ID format. Please use numbers only.");
+        } catch (AuthorNotFoundException | IllegalArgumentException | AuthorAlreadyExistsException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
+    private static void handleDeleteAuthor() {
+        try {
+            System.out.print("\nEnter the author id: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            Author author = libraryService.deleteAuthor(id);
+
+            printSuccess(String.format("Success! Author %s deleted.", author.getName()));
+        } catch (NumberFormatException  ex) {
+            printError("Invalid ID format. Please use numbers only.");
+        } catch (AuthorNotFoundException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
     private static void handleBorrowBook() {
         try {
             System.out.print("\nEnter the Book ID you wish to borrow: ");
@@ -260,7 +317,7 @@ public class Main {
 
     private static void printBookTable(List<Book> books) {
         if (books.isEmpty()) {
-            printError("[ There are currently no books in this list ]");
+            printInfo("[ There are currently no books in this list ]");
             return;
         }
 
@@ -284,6 +341,34 @@ public class Main {
                     truncate(book.getTitle(), 30),
                     truncate(book.getAuthor().getName(), 25),
                     status
+            );
+        }
+
+        System.out.println(bottom);
+    }
+
+    private static void printAuthorTable(List<Author> authors) {
+        if (authors.isEmpty()) {
+            printInfo("[ There are currently no authors in this list ]");
+            return;
+        }
+
+        String top =    "╔═════╦═══════════════════════════╗";
+        String mid =    "╠═════╬═══════════════════════════╣";
+        String bottom = "╚═════╩═══════════════════════════╝";
+
+        String rowFormat = "║ %-3d ║ %-25s ║%n";
+        String headerFormat = "║ %-3s ║ %-25s ║%n";
+
+        System.out.println();
+        System.out.println(top);
+        System.out.printf(headerFormat, "ID", "NAME");
+        System.out.println(mid);
+
+        for (Author author : authors) {
+            System.out.printf(rowFormat,
+                    author.getId(),
+                    truncate(author.getName(), 25)
             );
         }
 
