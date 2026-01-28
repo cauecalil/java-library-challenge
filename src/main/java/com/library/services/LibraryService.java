@@ -70,7 +70,11 @@ public class LibraryService {
         loanRepository.save(loan);
     }
 
-    public List<Loan> getLoans() {
+    public List<Loan> getAllLoans() {
         return loanRepository.findAll();
+    }
+
+    public List<Loan> getActiveLoans() {
+        return loanRepository.findManyByReturnDateIsNull();
     }
 }

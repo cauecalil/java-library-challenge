@@ -61,6 +61,27 @@ public class LoanRepository {
         );
     }
 
+    public List<Loan> findManyByReturnDateIsNull() {
+        String query = """
+            SELECT
+                l.id AS loan_id,
+                l.customer_name,
+                l.loan_date,
+                l.return_date,
+                b.id AS book_id,
+                b.title AS book_title
+            FROM loans l
+            JOIN books b ON b.id = l.book_id
+            WHERE l.return_date IS NULL
+        """;
+
+        return db.withHandle(handle ->
+                handle.createQuery(query)
+                        .map(this::mapRow)
+                        .list()
+        );
+    }
+
     public void create(Loan loan) {
         String query = """
             INSERT INTO loans (book_id, customer_name, loan_date)

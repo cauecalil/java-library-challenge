@@ -202,9 +202,10 @@ public class Main {
                     handleReturnBook();
                     break;
                 case 3:
-                    printLoanTable(libraryService.getLoans());
+                    printLoanTable(libraryService.getAllLoans());
                     break;
                 case 4:
+                    printLoanTable(libraryService.getActiveLoans());
                     break;
                 case 0:
                     inMenu = false;
@@ -291,7 +292,7 @@ public class Main {
 
     private static void printLoanTable(List<Loan> loans) {
         if (loans.isEmpty()) {
-            printError("[ No active loans at the moment ]");
+            printInfo("[ There are currently no loans in this list ]");
             return;
         }
 
@@ -310,7 +311,7 @@ public class Main {
         System.out.println(mid);
 
         for (Loan loan : loans) {
-            String returnDate = (loan.getReturnDate() != null) ? loan.getReturnDate().format(formatter) : "";
+            String returnDate = (loan.getReturnDate() != null) ? loan.getReturnDate().format(formatter) : "-";
 
             System.out.printf(rowFormat,
                     loan.getBook().getId(),
