@@ -116,18 +116,24 @@ public class Main {
 
             switch (option) {
                 case 1:
-                    printBookTable(libraryService.getBooks());
+                    printBookTable(libraryService.getAllBooks());
                     break;
                 case 2:
                     printBookTable(libraryService.getAvailableBooks());
                     break;
                 case 3:
+                    handleAddNewBook();
                     break;
                 case 4:
+                    handleEditBook();
                     break;
                 case 5:
+                    handleDeleteBook();
                     break;
                 case 6:
+                    System.out.print("\nEnter book title to search: ");
+                    String name = scanner.nextLine();
+                    printBookTable(libraryService.searchBooksByTitle(name));
                     break;
                 case 0:
                     inMenu = false;
@@ -135,6 +141,65 @@ public class Main {
                 default:
                     printError("Invalid option! Try again.");
             }
+        }
+    }
+
+    private static void handleAddNewBook() {
+        try {
+            System.out.print("\nEnter the book title: ");
+            String title = scanner.nextLine();
+
+            System.out.print("Enter the Author ID: ");
+            int authorId = Integer.parseInt(scanner.nextLine());
+
+            Book book = libraryService.createBook(title, authorId);
+
+            printSuccess(String.format("Success! Book %s created.", book.getTitle()));
+        } catch (NumberFormatException  ex) {
+            printError("Invalid ID format. Please use numbers only.");
+        } catch (IllegalArgumentException | AuthorNotFoundException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
+    private static void handleEditBook() {
+        try {
+            System.out.print("\nEnter the Book ID to edit: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            Book book = libraryService.getBookById(id);
+
+            System.out.printf("Enter the new book title (%s): ", book.getTitle());
+            String title = scanner.nextLine();
+
+            System.out.printf("Enter the new book author id (%d): ", book.getAuthor().getId());
+            String authorId = scanner.nextLine();
+
+            String newName = title.isBlank() ? book.getTitle() : title;
+            int newAuthorId = authorId.isBlank() ? book.getAuthor().getId() : Integer.parseInt(authorId);
+
+            libraryService.updateBook(book, newName, newAuthorId);
+
+            printSuccess(String.format("Book %s updated successfully.", book.getTitle()));
+        } catch (NumberFormatException ex) {
+            printError("Invalid ID format. Please use numbers only.");
+        } catch (BookNotFoundException | AuthorNotFoundException | IllegalArgumentException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
+    private static void handleDeleteBook() {
+        try {
+            System.out.print("\nEnter the book id: ");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            Book book = libraryService.deleteBook(id);
+
+            printSuccess(String.format("Success! Book %s deleted.", book.getTitle()));
+        } catch (NumberFormatException  ex) {
+            printError("Invalid ID format. Please use numbers only.");
+        } catch (BookNotFoundException ex) {
+            printError(ex.getMessage());
         }
     }
 
@@ -267,7 +332,7 @@ public class Main {
             printSuccess(String.format("Success! Author %s deleted.", author.getName()));
         } catch (NumberFormatException  ex) {
             printError("Invalid ID format. Please use numbers only.");
-        } catch (AuthorNotFoundException ex) {
+        } catch (AuthorNotFoundException | AuthorHasBooksException ex) {
             printError(ex.getMessage());
         }
     }

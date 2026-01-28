@@ -25,14 +25,6 @@ public class LibraryService {
         this.loanRepository = loanRepository;
     }
 
-    public List<Book> getBooks() {
-        return bookRepository.findAll();
-    }
-
-    public List<Book> getAvailableBooks() {
-        return bookRepository.findManyByAvailability();
-    }
-
     public List<Author> getAllAuthors() {
         return authorRepository.findAll();
     }
@@ -89,6 +81,74 @@ public class LibraryService {
 
     public List<Author> searchAuthorsByName(String name) {
         return authorRepository.findManyByName(name);
+    }
+
+    public List<Book> getAllBooks() {
+        return bookRepository.findAll();
+    }
+
+    public List<Book> getAvailableBooks() {
+        return bookRepository.findManyByAvailability();
+    }
+
+    public Book getBookById(int id) {
+        Book book = bookRepository.findById(id);
+
+        if (book == null) {
+            throw new BookNotFoundException();
+        }
+
+        return book;
+    }
+
+    public Book createBook(String title, int authorId) {
+        Author author = authorRepository.findById(authorId);
+
+        if (author == null) {
+            throw new AuthorNotFoundException();
+        }
+
+        Book book = new Book(title, author);
+
+        bookRepository.create(book);
+
+        return book;
+    }
+
+    public void updateBook(Book book, String title, int authorId) {
+        if (!book.getTitle().equals(title)) {
+            book.changeTitle(title);
+        }
+
+        Author currentAuthor = book.getAuthor();
+
+        if (currentAuthor.getId() != authorId) {
+            Author newAuthor = authorRepository.findById(authorId);
+
+            if (newAuthor == null) {
+                throw new AuthorNotFoundException();
+            }
+
+            book.changeAuthor(newAuthor);
+        }
+
+        bookRepository.save(book);
+    }
+
+    public Book deleteBook(int id) {
+        Book book = bookRepository.findById(id);
+
+        if (book == null) {
+            throw new BookNotFoundException();
+        }
+
+        bookRepository.delete(id);
+
+        return book;
+    }
+
+    public List<Book> searchBooksByTitle(String title) {
+        return bookRepository.findManyByTitle(title);
     }
 
     public void borrowBook(int bookId, String customerName) {

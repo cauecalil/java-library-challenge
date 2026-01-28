@@ -14,6 +14,8 @@ public class Book {
     }
 
     public Book(String title, Author author) {
+        validateTitle(title);
+
         this.title = title;
         this.author = author;
         this.available = true;
@@ -80,6 +82,31 @@ public class Book {
 
     public void markAsReturned() {
         this.available = true;
+        touch();
+    }
+
+    private void validateTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Book title cannot be empty");
+        }
+
+        if (title.length() < 3) {
+            throw new IllegalArgumentException("Book title must have at least 3 characters");
+        }
+
+        if (title.length() > 100) {
+            throw new IllegalArgumentException("Book title must have at most 100 characters");
+        }
+    }
+
+    public void changeTitle(String title) {
+        validateTitle(title);
+        this.title = title;
+        touch();
+    }
+
+    public void changeAuthor(Author author) {
+        this.author = author;
         touch();
     }
 }

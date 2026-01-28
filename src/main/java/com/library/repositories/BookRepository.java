@@ -101,6 +101,29 @@ public class BookRepository {
         );
     }
 
+    public List<Book> findManyByTitle(String title) {
+        String query = """
+            SELECT
+                b.id AS book_id,
+                b.title,
+                b.available,
+                b.created_at,
+                b.updated_at,
+                a.id AS author_id,
+                a.name AS author_name
+            FROM books b
+            JOIN authors a ON a.id = b.author_id
+            WHERE b.title LIKE :title COLLATE NOCASE
+        """;
+
+        return db.withHandle(handle ->
+                handle.createQuery(query)
+                        .bind("title", "%" + title + "%")
+                        .map(this::mapRow)
+                        .list()
+        );
+    }
+
     public void create(Book book) {
         String query = """
             INSERT INTO books (title, author_id, available, created_at, updated_at)
