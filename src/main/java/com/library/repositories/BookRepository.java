@@ -17,6 +17,23 @@ public class BookRepository {
         this.db = db;
     }
 
+    public boolean existsByAuthorId(int authorId) {
+        String query = """
+            SELECT 1
+            FROM books
+            WHERE author_id = :authorId
+            LIMIT 1
+        """;
+
+        return db.withHandle(handle ->
+                handle.createQuery(query)
+                        .bind("authorId", authorId)
+                        .mapTo(Integer.class)
+                        .findOne()
+                        .isPresent()
+        );
+    }
+
     public Book findById(int id) {
         String query = """
             SELECT

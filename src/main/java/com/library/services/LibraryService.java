@@ -78,6 +78,10 @@ public class LibraryService {
             throw new AuthorNotFoundException();
         }
 
+        if (bookRepository.existsByAuthorId(author.getId())) {
+            throw new AuthorHasBooksException();
+        }
+
         authorRepository.delete(id);
 
         return author;
