@@ -18,37 +18,102 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Main {
+    private static Scanner scanner;
+    private static LibraryService libraryService;
+
     public static void main(String[] args) {
         Jdbi db = Database.get();
         BookRepository bookRepository = new BookRepository(db);
         LoanRepository loanRepository = new LoanRepository(db);
-        LibraryService libraryService = new LibraryService(bookRepository, loanRepository);
+        libraryService = new LibraryService(bookRepository, loanRepository);
+        scanner = new Scanner(System.in);
 
-        Scanner scanner = new Scanner(System.in);
-        boolean running = true;
+        showMainMenu();
 
-        System.out.println("========================================");
-        System.out.println("      Welcome to the Library System     ");
-        System.out.println("========================================");
+        scanner.close();
+    }
 
-        do {
-            System.out.println("\n--- MAIN MENU ---");
-            System.out.println("1. View Catalog (All Books)");
-            System.out.println("2. View Available Books Only");
-            System.out.println("3. Borrow a Book");
-            System.out.println("4. Return a Book");
-            System.out.println("5. View Loans History");
-            System.out.println("0. Exit System");
-            System.out.print("\nPlease select an option: ");
+    private static int readIntOption() {
+        try {
+            String input = scanner.nextLine();
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
 
-            int option;
+    private static void printSuccess(String message) {
+        String green = "\u001B[32m";
+        String reset = "\u001B[0m";
+        System.out.println("\n" + green + "✓ " + message + reset);
+    }
 
-            try {
-                String input = scanner.nextLine();
-                option = Integer.parseInt(input);
-            } catch (NumberFormatException e) {
-                option = -1;
+    private static void printError(String message) {
+        String red = "\u001B[31m";
+        String reset = "\u001B[0m";
+        System.out.println("\n" + red + "✗ " + message + reset);
+    }
+
+    private static void printInfo(String message) {
+        String yellow = "\u001B[33m";
+        String reset = "\u001B[0m";
+        System.out.println("\n" + yellow + "ℹ " + message + reset);
+    }
+
+    private static void showMainMenu() {
+        boolean inMenu = true;
+
+        while (inMenu) {
+            System.out.println("\n╔═════════════════════════════════════╗");
+            System.out.println("║              MAIN MENU              ║");
+            System.out.println("╠═════════════════════════════════════╣");
+            System.out.println("║ 1. Book Management                  ║");
+            System.out.println("║ 2. Author Management                ║");
+            System.out.println("║ 3. Loan Management                  ║");
+            System.out.println("║ 0. Exit System                      ║");
+            System.out.println("╚═════════════════════════════════════╝");
+            System.out.print("\nSelect an option: ");
+
+            int option = readIntOption();
+
+            switch (option) {
+                case 1:
+                    showBookMenu();
+                    break;
+                case 2:
+                    showAuthorMenu();
+                    break;
+                case 3:
+                    showLoanMenu();
+                    break;
+                case 0:
+                    printInfo("Closing system... Have a great day!");
+                    inMenu = false;
+                    break;
+                default:
+                    printError("Invalid option! Try again.");
             }
+        }
+    }
+
+    private static void showBookMenu() {
+        boolean inMenu = true;
+
+        while (inMenu) {
+            System.out.println("\n╔═════════════════════════════════════╗");
+            System.out.println("║           BOOK MANAGEMENT           ║");
+            System.out.println("╠═════════════════════════════════════╣");
+            System.out.println("║ 1. View All Books                   ║");
+            System.out.println("║ 2. View Available Books             ║");
+            System.out.println("║ 3. Add New Book                     ║");
+            System.out.println("║ 4. Edit Book                        ║");
+            System.out.println("║ 5. Delete Book                      ║");
+            System.out.println("║ 6. Search Book                      ║");
+            System.out.println("║ 0. Back to Main Menu                ║");
+            System.out.println("╚═════════════════════════════════════╝");
+            System.out.print("\nSelect an option: ");
+
+            int option = readIntOption();
 
             switch (option) {
                 case 1:
@@ -58,95 +123,162 @@ public class Main {
                     printBookTable(libraryService.getAvailableBooks());
                     break;
                 case 3:
-                    try {
-                        System.out.print("\nEnter the Book ID you wish to borrow: ");
-                        int bookId = scanner.nextInt();
-                        scanner.nextLine();
-
-                        System.out.print("Enter your name: ");
-                        String customerName = scanner.nextLine().toUpperCase();
-
-                        libraryService.borrowBook(bookId, customerName);
-
-                        printSuccess(String.format("Success! Enjoy your reading, %s.", customerName));
-                    } catch (InputMismatchException ex) {
-                        printError("Invalid ID format. Please use numbers only.");
-                        scanner.nextLine();
-                    } catch (BookNotFoundException | BookAlreadyBorrowedException ex) {
-                        printError(ex.getMessage());
-                    }
-
                     break;
                 case 4:
-                    try {
-                        System.out.print("\nEnter the Book ID you are returning: ");
-                        int bookId = scanner.nextInt();
-                        scanner.nextLine();
-
-                        libraryService.returnBook(bookId);
-
-                        printSuccess("Book returned successfully. Thank you!");
-                    } catch (InputMismatchException ex) {
-                        printError("Invalid ID format. Please use numbers only.");
-                        scanner.nextLine();
-                    } catch (BookNotFoundException | BookNotBorrowedException | LoanNotFoundException ex) {
-                        printError(ex.getMessage());
-                    }
-
                     break;
                 case 5:
-                    printLoanTable(libraryService.getLoans());
+                    break;
+                case 6:
                     break;
                 case 0:
-                    System.out.println("\nClosing system... Have a great day!");
-                    running = false;
+                    inMenu = false;
                     break;
                 default:
                     printError("Invalid option! Try again.");
             }
-        } while (running);
+        }
     }
 
-    private static void printSuccess(String message) {
-        String blue = "\u001B[34m"; // ANSI code for blue text
-        String reset = "\u001B[0m"; // ANSI code to reset color to default
+    private static void showAuthorMenu() {
+        boolean inMenu = true;
 
-        System.out.println("\n" + blue + message + reset);
+        while (inMenu) {
+            System.out.println("\n╔═════════════════════════════════════╗");
+            System.out.println("║          AUTHOR MANAGEMENT          ║");
+            System.out.println("╠═════════════════════════════════════╣");
+            System.out.println("║ 1. View All Authors                 ║");
+            System.out.println("║ 2. Add New Author                   ║");
+            System.out.println("║ 3. Edit Author                      ║");
+            System.out.println("║ 4. Delete Author                    ║");
+            System.out.println("║ 5. Search Author                    ║");
+            System.out.println("║ 0. Back to Main Menu                ║");
+            System.out.println("╚═════════════════════════════════════╝");
+            System.out.print("\nSelect an option: ");
+
+            int option = readIntOption();
+
+            switch (option) {
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 0:
+                    inMenu = false;
+                    break;
+                default:
+                    printError("Invalid option! Try again.");
+            }
+        }
     }
 
-    private static void printError(String message) {
-        String red = "\u001B[31m"; // ANSI code for red text
-        String reset = "\u001B[0m"; // ANSI code to reset color to default
+    private static void showLoanMenu() {
+        boolean inMenu = true;
 
-        System.out.println("\n" + red + message + reset);
+        while (inMenu) {
+            System.out.println("\n╔═════════════════════════════════════╗");
+            System.out.println("║           LOAN MANAGEMENT           ║");
+            System.out.println("╠═════════════════════════════════════╣");
+            System.out.println("║ 1. Borrow a Book                    ║");
+            System.out.println("║ 2. Return a Book                    ║");
+            System.out.println("║ 3. View All Loans                   ║");
+            System.out.println("║ 4. View Active Loans                ║");
+            System.out.println("║ 0. Back to Main Menu                ║");
+            System.out.println("╚═════════════════════════════════════╝");
+            System.out.print("\nSelect an option: ");
+
+            int option = readIntOption();
+
+            switch (option) {
+                case 1:
+                    handleBorrowBook();
+                    break;
+                case 2:
+                    handleReturnBook();
+                    break;
+                case 3:
+                    printLoanTable(libraryService.getLoans());
+                    break;
+                case 4:
+                    break;
+                case 0:
+                    inMenu = false;
+                    break;
+                default:
+                    printError("Invalid option! Try again.");
+            }
+        }
+    }
+
+    private static void handleBorrowBook() {
+        try {
+            System.out.print("\nEnter the Book ID you wish to borrow: ");
+            int bookId = scanner.nextInt();
+            scanner.nextLine();
+
+            System.out.print("Enter your name: ");
+            String customerName = scanner.nextLine().toUpperCase();
+
+            libraryService.borrowBook(bookId, customerName);
+
+            printSuccess(String.format("Success! Enjoy your reading, %s.", customerName));
+        } catch (InputMismatchException ex) {
+            printError("Invalid ID format. Please use numbers only.");
+            scanner.nextLine();
+        } catch (BookNotFoundException | BookAlreadyBorrowedException ex) {
+            printError(ex.getMessage());
+        }
+    }
+
+    private static void handleReturnBook() {
+        try {
+            System.out.print("\nEnter the Book ID you are returning: ");
+            int bookId = scanner.nextInt();
+            scanner.nextLine();
+
+            libraryService.returnBook(bookId);
+
+            printSuccess("Book returned successfully. Thank you!");
+        } catch (InputMismatchException ex) {
+            printError("Invalid ID format. Please use numbers only.");
+            scanner.nextLine();
+        } catch (BookNotFoundException | BookNotBorrowedException | LoanNotFoundException ex) {
+            printError(ex.getMessage());
+        }
     }
 
     private static String truncate(String text, int length) {
-        // If text is too long, cut it and add ellipsis to keep table alignment
         if (text.length() <= length) return text;
         return text.substring(0, length - 3) + "...";
     }
 
     private static void printBookTable(List<Book> books) {
-        // Check if the list is empty to avoid printing an empty table
         if (books.isEmpty()) {
-            printError("[There are currently no books in this list]");
+            printError("[ There are currently no books in this list ]");
             return;
         }
 
-        // Define column widths: ID (5), Title (30), Author (25), Status (12)
-        String format = "| %-3d | %-30s | %-25s | %-12s |%n";
-        String line = "+-----+--------------------------------+---------------------------+--------------+";
+        String top =    "╔═════╦════════════════════════════════╦═══════════════════════════╦══════════════╗";
+        String mid =    "╠═════╬════════════════════════════════╬═══════════════════════════╬══════════════╣";
+        String bottom = "╚═════╩════════════════════════════════╩═══════════════════════════╩══════════════╝";
 
-        // Print table header
-        System.out.println("\n" + line);
-        System.out.printf("| %-3s | %-30s | %-25s | %-12s |%n", "ID", "TITLE", "AUTHOR", "STATUS");
-        System.out.println(line);
+        String rowFormat = "║ %-3d ║ %-30s ║ %-25s ║ %-12s ║%n";
+        String headerFormat = "║ %-3s ║ %-30s ║ %-25s ║ %-12s ║%n";
 
-        // Iterate through books and print each row
+        System.out.println();
+        System.out.println(top);
+        System.out.printf(headerFormat, "ID", "TITLE", "AUTHOR", "STATUS");
+        System.out.println(mid);
+
         for (Book book : books) {
             String status = book.isAvailable() ? "Available" : "Borrowed";
-            System.out.printf(format,
+
+            System.out.printf(rowFormat,
                     book.getId(),
                     truncate(book.getTitle(), 30),
                     truncate(book.getAuthor().getName(), 25),
@@ -154,38 +286,41 @@ public class Main {
             );
         }
 
-        System.out.println(line);
+        System.out.println(bottom);
     }
 
     private static void printLoanTable(List<Loan> loans) {
-        // Check if the list is empty to avoid printing an empty table
         if (loans.isEmpty()) {
-            printError("[No active loans at the moment]");
+            printError("[ No active loans at the moment ]");
             return;
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-        // Define column widths: ID (4), Book (30), Customer (15), Loan Date (16), Return Date (16)
-        String format = "| %-4d | %-30s | %-15s | %-16s | %-16s |%n";
-        String line = "+------+--------------------------------+-----------------+------------------+------------------+";
+        String top =    "╔═════════╦════════════════════════════════╦═════════════════╦══════════════════╦══════════════════╗";
+        String mid =    "╠═════════╬════════════════════════════════╬═════════════════╬══════════════════╬══════════════════╣";
+        String bottom = "╚═════════╩════════════════════════════════╩═════════════════╩══════════════════╩══════════════════╝";
 
-        // Print table header
-        System.out.println("\n" + line);
-        System.out.printf("| %-4s | %-30s | %-15s | %-16s | %-16s |%n", "ID", "BOOK TITLE", "CUSTOMER", "LOAN DATE", "RETURN DATE");
-        System.out.println(line);
+        String rowFormat = "║ %-7d ║ %-30s ║ %-15s ║ %-16s ║ %-16s ║%n";
+        String headerFormat = "║ %-7s ║ %-30s ║ %-15s ║ %-16s ║ %-16s ║%n";
 
-        // Iterate through loans and print each row
+        System.out.println();
+        System.out.println(top);
+        System.out.printf(headerFormat, "BOOK ID", "BOOK TITLE", "CUSTOMER", "LOAN DATE", "RETURN DATE");
+        System.out.println(mid);
+
         for (Loan loan : loans) {
-            System.out.printf(format,
-                    loan.getId(),
+            String returnDate = (loan.getReturnDate() != null) ? loan.getReturnDate().format(formatter) : "";
+
+            System.out.printf(rowFormat,
+                    loan.getBook().getId(),
                     truncate(loan.getBook().getTitle(), 30),
                     truncate(loan.getCustomerName(), 15),
                     loan.getLoanDate().format(formatter),
-                    (loan.getReturnDate() != null) ? loan.getReturnDate().format(formatter) : ""
+                    returnDate
             );
         }
 
-        System.out.println(line);
+        System.out.println(bottom);
     }
 }
